@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'quiz_summary_screen.dart';
 
 class QuizScreen extends StatefulWidget {
   final int numberOfQuestions;
@@ -31,6 +32,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   // Pre-shuffled options for each question
   List<List<String>> options = [];
+  List<Map<String, dynamic>> questionResults = [];
 
   @override
   void initState() {
@@ -79,50 +81,81 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void timeUp() {
-    setState(() {
-      feedback = 'Time\'s up! The correct answer is ${questions[currentQuestionIndex]['correct_answer']}.';
-      showFeedback = true;
+    final currentQuestion = questions[currentQuestionIndex];
+    questionResults.add({
+      'question': currentQuestion['question'],
+      'userAnswer': 'No Answer',
+      'correctAnswer': currentQuestion['correct_answer'],
+      'isCorrect': false,
     });
 
-    Future.delayed(Duration(seconds: 2), () {
-      setState(() {
-        showFeedback = false;
-        if (currentQuestionIndex < questions.length - 1) {
-          currentQuestionIndex++;
-          timeRemaining = 15;
-          startTimer();
-        } else {
-          feedback = 'Quiz Completed! Final Score: $score/${questions.length}';
-        }
-      });
-    });
+    moveToNextQuestion();
   }
 
   void checkAnswer(String selectedOption) {
     timer.cancel();
-    final correctAnswer = questions[currentQuestionIndex]['correct_answer'];
-    setState(() {
-      if (selectedOption == correctAnswer) {
-        score++;
-        feedback = 'Correct!';
-      } else {
-        feedback = 'Incorrect! The correct answer is $correctAnswer.';
-      }
-      showFeedback = true;
-    });
+    final currentQuestion = questions[currentQuestionIndex];
+    final correctAnswer = currentQuestion['correct_answer'];
+    final isCorrect = selectedOption == correctAnswer;
 
-    Future.delayed(Duration(seconds: 2), () {
-      setState(() {
-        showFeedback = false;
-        if (currentQuestionIndex < questions.length - 1) {
-          currentQuestionIndex++;
-          timeRemaining = 15;
-          startTimer();
-        } else {
-          feedback = 'Quiz Completed! Final Score: $score/${questions.length}';
-        }
+    setState(() {
+      if (isCorrect) score++;
+      feedback = isCorrect ? 'Correct!' : 'Incorrect! The correct answer is $correctAnswer.';
+      showFeedback = true;
+
+      // Store result
+      questionResults.add({
+        'question': currentQuestion['question'],
+        'userAnswer': selectedOption,
+        'correctAnswer': correctAnswer,
+        'isCorrect': isCorrect,
       });
     });
+
+    Future.delayed(Duration(seconds: 2), moveToNextQuestion);
+  }
+
+  void moveToNextQuestion() {
+    setState(() {
+      showFeedback = false;
+
+      if (currentQuestionIndex < questions.length - 1) {
+        currentQuestionIndex++;
+        timeRemaining = 15;
+        startTimer();
+      } else {
+        timer.cancel();
+        navigateToSummary();
+      }
+    });
+  }
+
+  void navigateToSummary() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuizSummaryScreen(
+          score: score,
+          questionResults: questionResults,
+          onRetakeQuiz: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => QuizScreen(
+                  numberOfQuestions: widget.numberOfQuestions,
+                  category: widget.category,
+                  difficulty: widget.difficulty,
+                  type: widget.type,
+                ),
+              ),
+            );
+          },
+          onGoToSetup: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
   }
 
   @override
