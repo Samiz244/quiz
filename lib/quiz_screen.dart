@@ -143,6 +143,9 @@ class _QuizScreenState extends State<QuizScreen> {
     final currentQuestion = questions[currentQuestionIndex];
     final List<String> currentOptions = options[currentQuestionIndex];
 
+    // Calculate progress
+    double progress = (currentQuestionIndex + 1) / questions.length;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Quiz'),
@@ -152,18 +155,38 @@ class _QuizScreenState extends State<QuizScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Score: $score', style: TextStyle(fontSize: 20)),
+            // Progress Indicator
+            LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.grey[300],
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Question ${currentQuestionIndex + 1} of ${questions.length}',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 20),
+
+            // Score and Timer
+            Text('Score: $score', style: TextStyle(fontSize: 20)),
+            SizedBox(height: 10),
             Text('Time Remaining: $timeRemaining seconds', style: TextStyle(fontSize: 20, color: Colors.red)),
             SizedBox(height: 20),
+
+            // Question
             Text(currentQuestion['question'], style: TextStyle(fontSize: 18)),
             SizedBox(height: 20),
+
+            // Options
             ...currentOptions.map((option) {
               return ElevatedButton(
                 onPressed: () => checkAnswer(option),
                 child: Text(option),
               );
             }).toList(),
+
+            // Feedback
             if (showFeedback)
               Padding(
                 padding: const EdgeInsets.only(top: 20),
