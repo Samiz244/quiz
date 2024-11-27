@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -25,6 +26,17 @@ class _QuizScreenState extends State<QuizScreen> {
   int score = 0;
   String feedback = '';
   bool showFeedback = false;
+  late Timer timer;
+  int timeRemaining = 15;
+
+  // Pre-shuffled options for each question
+  List<List<String>> options = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchQuestions();
+  }
 
   Future<void> fetchQuestions() async {
     final url =
@@ -35,7 +47,16 @@ class _QuizScreenState extends State<QuizScreen> {
         final data = json.decode(response.body);
         setState(() {
           questions = data['results'];
+
+          // Pre-shuffle the options for each question
+          options = questions.map<List<String>>((question) {
+            final List<String> allOptions = List<String>.from(question['incorrect_answers']);
+            allOptions.add(question['correct_answer']);
+            allOptions.shuffle(); // Shuffle only once when questions are fetched
+            return allOptions;
+          }).toList();
         });
+        startTimer();
       } else {
         throw Exception('Failed to load questions.');
       }
@@ -44,13 +65,41 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fetchQuestions();
+  void startTimer() {
+    timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        if (timeRemaining > 0) {
+          timeRemaining--;
+        } else {
+          timer.cancel();
+          timeUp();
+        }
+      });
+    });
+  }
+
+  void timeUp() {
+    setState(() {
+      feedback = 'Time\'s up! The correct answer is ${questions[currentQuestionIndex]['correct_answer']}.';
+      showFeedback = true;
+    });
+
+    Future.delayed(Duration(seconds: 2), () {
+      setState(() {
+        showFeedback = false;
+        if (currentQuestionIndex < questions.length - 1) {
+          currentQuestionIndex++;
+          timeRemaining = 15;
+          startTimer();
+        } else {
+          feedback = 'Quiz Completed! Final Score: $score/${questions.length}';
+        }
+      });
+    });
   }
 
   void checkAnswer(String selectedOption) {
+    timer.cancel();
     final correctAnswer = questions[currentQuestionIndex]['correct_answer'];
     setState(() {
       if (selectedOption == correctAnswer) {
@@ -67,11 +116,19 @@ class _QuizScreenState extends State<QuizScreen> {
         showFeedback = false;
         if (currentQuestionIndex < questions.length - 1) {
           currentQuestionIndex++;
+          timeRemaining = 15;
+          startTimer();
         } else {
           feedback = 'Quiz Completed! Final Score: $score/${questions.length}';
         }
       });
     });
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
   }
 
   @override
@@ -84,11 +141,7 @@ class _QuizScreenState extends State<QuizScreen> {
     }
 
     final currentQuestion = questions[currentQuestionIndex];
-    final List<String> options = List<String>.from(currentQuestion['incorrect_answers']);
-
-    // Add the correct answer and shuffle the options
-    options.add(currentQuestion['correct_answer']);
-    options.shuffle();
+    final List<String> currentOptions = options[currentQuestionIndex];
 
     return Scaffold(
       appBar: AppBar(
@@ -101,9 +154,11 @@ class _QuizScreenState extends State<QuizScreen> {
           children: [
             Text('Score: $score', style: TextStyle(fontSize: 20)),
             SizedBox(height: 20),
+            Text('Time Remaining: $timeRemaining seconds', style: TextStyle(fontSize: 20, color: Colors.red)),
+            SizedBox(height: 20),
             Text(currentQuestion['question'], style: TextStyle(fontSize: 18)),
             SizedBox(height: 20),
-            ...options.map((option) {
+            ...currentOptions.map((option) {
               return ElevatedButton(
                 onPressed: () => checkAnswer(option),
                 child: Text(option),
