@@ -26,7 +26,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
           selectedCategory = categories.isNotEmpty ? categories.first['id'].toString() : null;
         });
       } else {
-        throw Exception('Failed to load categories: ${response.reasonPhrase}');
+        throw Exception('Failed to load categories.');
       }
     } catch (e) {
       print('Error fetching categories: $e');
@@ -40,11 +40,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
   }
 
   void startQuiz() {
-    print('Number of Questions: $selectedNumberOfQuestions');
-    print('Category: $selectedCategory');
-    print('Difficulty: $selectedDifficulty');
-    print('Type: $selectedType');
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -64,17 +59,13 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
       appBar: AppBar(title: Text('Quiz Setup')),
       body: categories.isEmpty
           ? Center(
-              child: Text(
-                'Loading categories...',
-                style: TextStyle(fontSize: 16),
-              ),
+              child: CircularProgressIndicator(),
             )
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Number of Questions
                   Text('Number of Questions:', style: TextStyle(fontSize: 16)),
                   DropdownButton<int>(
                     value: selectedNumberOfQuestions,
@@ -88,8 +79,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                         .toList(),
                   ),
                   SizedBox(height: 16),
-
-                  // Category
                   Text('Category:', style: TextStyle(fontSize: 16)),
                   DropdownButton<String>(
                     value: selectedCategory,
@@ -106,8 +95,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                     }).toList(),
                   ),
                   SizedBox(height: 16),
-
-                  // Difficulty
                   Text('Difficulty:', style: TextStyle(fontSize: 16)),
                   DropdownButton<String>(
                     value: selectedDifficulty,
@@ -121,8 +108,6 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                         .toList(),
                   ),
                   SizedBox(height: 16),
-
-                  // Question Type
                   Text('Question Type:', style: TextStyle(fontSize: 16)),
                   DropdownButton<String>(
                     value: selectedType,
@@ -139,8 +124,9 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                         .toList(),
                   ),
                   SizedBox(height: 24),
-
-                  ElevatedButton(onPressed: startQuiz, child: Text('Start Quiz')),
+                  Center(
+                    child: ElevatedButton(onPressed: startQuiz, child: Text('Start Quiz')),
+                  ),
                 ],
               ),
             ),

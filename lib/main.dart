@@ -10,8 +10,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Quiz App',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: QuizSetupScreen(),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: QuizSetupScreen(), // Navigate to the Setup Screen
     );
   }
 }
