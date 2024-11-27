@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Quiz App',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: QuizSetupScreen(), // Calls the setup screen
+      home: QuizSetupScreen(),
     );
   }
 }

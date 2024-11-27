@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'quiz_screen.dart';
 
 class QuizSetupScreen extends StatefulWidget {
   @override
@@ -8,14 +9,12 @@ class QuizSetupScreen extends StatefulWidget {
 }
 
 class _QuizSetupScreenState extends State<QuizSetupScreen> {
-  // State Variables
   List<dynamic> categories = [];
   String? selectedCategory;
   String? selectedDifficulty = 'easy';
   String? selectedType = 'multiple';
   int selectedNumberOfQuestions = 5;
 
-  // Fetch Categories
   Future<void> fetchCategories() async {
     try {
       final url = Uri.parse('https://opentdb.com/api_category.php');
@@ -24,16 +23,13 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
         final data = json.decode(response.body);
         setState(() {
           categories = data['trivia_categories'];
-          selectedCategory = categories.first['id'].toString(); // Default to first category
+          selectedCategory = categories.isNotEmpty ? categories.first['id'].toString() : null;
         });
       } else {
         throw Exception('Failed to load categories: ${response.reasonPhrase}');
       }
     } catch (e) {
       print('Error fetching categories: $e');
-      setState(() {
-        categories = [];
-      });
     }
   }
 
@@ -43,12 +39,23 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
     fetchCategories();
   }
 
-  // Submit Quiz Configuration
   void startQuiz() {
-    print("Number of Questions: $selectedNumberOfQuestions");
-    print("Category: $selectedCategory");
-    print("Difficulty: $selectedDifficulty");
-    print("Type: $selectedType");
+    print('Number of Questions: $selectedNumberOfQuestions');
+    print('Category: $selectedCategory');
+    print('Difficulty: $selectedDifficulty');
+    print('Type: $selectedType');
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuizScreen(
+          numberOfQuestions: selectedNumberOfQuestions,
+          category: selectedCategory,
+          difficulty: selectedDifficulty,
+          type: selectedType,
+        ),
+      ),
+    );
   }
 
   @override
@@ -57,12 +64,10 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
       appBar: AppBar(title: Text('Quiz Setup')),
       body: categories.isEmpty
           ? Center(
-              child: categories.isEmpty
-                  ? Text(
-                      'Failed to load categories. Please try again.',
-                      style: TextStyle(fontSize: 16, color: Colors.red),
-                    )
-                  : CircularProgressIndicator(),
+              child: Text(
+                'Loading categories...',
+                style: TextStyle(fontSize: 16),
+              ),
             )
           : Padding(
               padding: const EdgeInsets.all(16.0),
@@ -79,8 +84,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                       });
                     },
                     items: [5, 10, 15]
-                        .map((num) =>
-                            DropdownMenuItem(value: num, child: Text('$num')))
+                        .map((num) => DropdownMenuItem(value: num, child: Text('$num')))
                         .toList(),
                   ),
                   SizedBox(height: 16),
@@ -113,10 +117,7 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                       });
                     },
                     items: ['easy', 'medium', 'hard']
-                        .map((diff) => DropdownMenuItem(
-                              value: diff,
-                              child: Text(diff),
-                            ))
+                        .map((diff) => DropdownMenuItem(value: diff, child: Text(diff)))
                         .toList(),
                   ),
                   SizedBox(height: 16),
@@ -133,21 +134,13 @@ class _QuizSetupScreenState extends State<QuizSetupScreen> {
                     items: ['multiple', 'boolean']
                         .map((type) => DropdownMenuItem(
                               value: type,
-                              child: Text(type == 'multiple'
-                                  ? 'Multiple Choice'
-                                  : 'True/False'),
+                              child: Text(type == 'multiple' ? 'Multiple Choice' : 'True/False'),
                             ))
                         .toList(),
                   ),
                   SizedBox(height: 24),
 
-                  // Start Quiz Button
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: startQuiz,
-                      child: Text('Start Quiz'),
-                    ),
-                  ),
+                  ElevatedButton(onPressed: startQuiz, child: Text('Start Quiz')),
                 ],
               ),
             ),
